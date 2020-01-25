@@ -30,13 +30,13 @@ class SHT1x
     int _clockPin;
     float readTemperatureRaw();
     int shiftIn(int _numBits);
-    void sendCommandSHT(int _command);
+    void sendCommandSHT(uint8_t _command);
     void waitForResultSHT();
     int getData16SHT();
     void skipCrcSHT();
     int getCRC();
-    int crc8(int data, int size, int init=0);
-    int reverseByte(int data);
+    uint8_t crc8(int data, int size, uint8_t init=0);
+    uint8_t reverseByte(uint8_t data);
 };
 
 #endif

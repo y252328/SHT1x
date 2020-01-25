@@ -79,7 +79,7 @@ float SHT1x::readHumidity()
   const float T2 =  0.00008;   // for 14 Bit @ 5V
 
   // Command to send to the SHT1x to request humidity
-  int _gHumidCmd = 0b00000101;
+  constexpr uint8_t _gHumidCmd = 0b00000101;
 
   // Fetch the value from the sensor
   sendCommandSHT(_gHumidCmd);
@@ -109,25 +109,15 @@ float SHT1x::readTemperatureRaw()
 {
   int _val;
   // Command to send to the SHT1x to request Temperature
-  int _gTempCmd  = 0b00000011;
+  constexpr uint8_t  _gTempCmd  = 0b00000011;
 
   sendCommandSHT(_gTempCmd);
   waitForResultSHT();
   _val = getData16SHT();
-  int _crc = getCRC();
-  // skipCrcSHT(_dataPin, _clockPin);
-  Serial.print("RAW Temp: ");
-  Serial.println(_val);
-  Serial.print("CRC: ");
-  Serial.println(_crc);
-  
-  int crc = 0;
-  crc = crc8(_gTempCmd, 8, crc);
+  uint8_t _crc = getCRC();
+  uint8_t crc = crc8(_gTempCmd, 8);
   crc = crc8(_val, 16, crc);
-  Serial.print("My CRC: ");
-  Serial.println(crc);
-  Serial.print("My CRC revsers: ");
-  Serial.println(reverseByte(crc));
+  crc = reverseByte(crc);
   return (_val);
 }
 
@@ -151,7 +141,7 @@ int SHT1x::shiftIn(int _numBits)
 
 /**
  */
-void SHT1x::sendCommandSHT(int _command)
+void SHT1x::sendCommandSHT(uint8_t  _command)
 {
   int ack;
 
@@ -187,16 +177,13 @@ void SHT1x::sendCommandSHT(int _command)
  */
 void SHT1x::waitForResultSHT()
 {
-  int i;
   int ack;
-
   pinMode(_dataPin, INPUT);
 
-  for(i= 0; i < 100; ++i)
+  for(int i= 0; i < 100; ++i)
   {
     delay(10);
     ack = digitalRead(_dataPin);
-
     if (ack == LOW) {
       break;
     }
@@ -268,9 +255,9 @@ int SHT1x::getCRC()
   return val;
 }
 
-int SHT1x::crc8(int data, int size, int init)
+uint8_t SHT1x::crc8(int data, int size, uint8_t init)
 {
-  int crc = init;
+  uint8_t crc = init;
   for ( int i = size-1 ; i >= 0 ; -- i) {
     if(((data >> i) & 0x1) != ((crc >> 7) & 0x1)){
       crc = crc << 1;
@@ -284,9 +271,9 @@ int SHT1x::crc8(int data, int size, int init)
   return crc;
 }
 
-int SHT1x::reverseByte(int data)
+uint8_t SHT1x::reverseByte(uint8_t data)
 {
-  int r_data = 0;
+  uint8_t r_data = 0;
   for( int i = 0 ; i < 8 ; ++ i ) {
     bitWrite(r_data, i, bitRead(data, 7-i));
   }
