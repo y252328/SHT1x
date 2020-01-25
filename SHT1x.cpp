@@ -46,7 +46,7 @@ float SHT1x::readTemperature(const TempUnit unit, bool checkSum)
     crc = crc8(_val, 16, crc);
     crc = reverseByte(crc);
     if (_crc != crc) {
-      Serial.println("SHT1x temperature checksum error");
+      Serial.println(F("SHT1x checksum error"));
     }
   } else {
     endTrans();
@@ -88,7 +88,7 @@ float SHT1x::readHumidity(bool checkSum)
     crc = crc8(_val, 16, crc);
     crc = reverseByte(crc);
     if (_crc != crc) {
-      Serial.println("SHT1x humidity checksum error");
+      Serial.println(F("SHT1x checksum error"));
     }
   } else {
     endTrans();
@@ -152,12 +152,12 @@ void SHT1x::sendCommand(uint8_t  _command)
   pinMode(_dataPin, INPUT);
   ack = digitalRead(_dataPin);
   if (ack != LOW) {
-    Serial.println("Ack Error 0");
+    Serial.println(F("SHT1x send command error"));
   }
   digitalWrite(_clockPin, LOW);
   ack = digitalRead(_dataPin);
   if (ack != HIGH) {
-    Serial.println("Ack Error 1");
+    Serial.println(F("SHT1x send command error"));
   }
 }
 
@@ -178,7 +178,7 @@ void SHT1x::waitForResult()
   }
 
   if (ack == HIGH) {
-    Serial.println("Ack Error 2"); // Can't do serial stuff here, need another way of reporting errors
+    Serial.println(F("SHT1x wait result timeout")); // Can't do serial stuff here, need another way of reporting errors
   }
 }
 
