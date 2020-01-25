@@ -18,44 +18,27 @@
 #include "SHT1x.h"
 
 /* ================  Public methods ================ */
-
 /**
- * Reads the current temperature in degrees Celsius
+ * Reads the current temperature
  */
-float SHT1x::readTemperatureC()
+float SHT1x::readTemperature(const TempUnit unit)
 {
   int _val;                // Raw value returned from sensor
   float _temperature;      // Temperature derived from raw value
 
   // Conversion coefficients from SHT15 datasheet
   constexpr  float D1 = -40.0;  // for 14 Bit @ 5V
-  constexpr  float D2 =   0.01; // for 14 Bit DEGC
+  float D2; // for 14 Bit DEGC
+  if ( unit == TempUnit::C) {
+    D2 = 0.01;
+  } else if( unit == TempUnit::F) {
+    D2 = 0.018;
+  }
 
   // Fetch raw value
   _val = readTemperatureRaw();
 
   // Convert raw value to degrees Celsius
-  _temperature = (_val * D2) + D1;
-
-  return (_temperature);
-}
-
-/**
- * Reads the current temperature in degrees Fahrenheit
- */
-float SHT1x::readTemperatureF()
-{
-  int _val;                 // Raw value returned from sensor
-  float _temperature;       // Temperature derived from raw value
-
-  // Conversion coefficients from SHT15 datasheet
-  constexpr  float D1 = -40.0;   // for 14 Bit @ 5V
-  constexpr  float D2 =   0.018; // for 14 Bit DEGF
-
-  // Fetch raw value
-  _val = readTemperatureRaw();
-
-  // Convert raw value to degrees Fahrenheit
   _temperature = (_val * D2) + D1;
 
   return (_temperature);
@@ -91,7 +74,7 @@ float SHT1x::readHumidity()
   _linearHumidity = C1 + C2 * _val + C3 * _val * _val;
 
   // Get current temperature for humidity correction
-  _temperature = readTemperatureC();
+  _temperature = readTemperature(TempUnit::C);
 
   // Correct humidity value for current temperature
   _correctedHumidity = (_temperature - 25.0 ) * (T1 + T2 * _val) + _linearHumidity;

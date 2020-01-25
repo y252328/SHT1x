@@ -18,13 +18,17 @@
 #include <WProgram.h>
 #endif
 
+enum class TempUnit : uint8_t{
+  C,
+  F
+};
+
 class SHT1x
 {
   public:
     SHT1x(int dataPin, int clockPin):_dataPin(dataPin), _clockPin(clockPin){}
     float readHumidity();
-    float readTemperatureC();
-    float readTemperatureF();
+    float readTemperature(const TempUnit unit);
   private:
     int _dataPin;
     int _clockPin;
