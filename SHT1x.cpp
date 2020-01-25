@@ -40,10 +40,17 @@ float SHT1x::readTemperature(const TempUnit unit, bool checkSum)
   sendCommandSHT(_gTempCmd);
   waitForResultSHT();
   _val = getData16SHT();
-  uint8_t _crc = getCRC();
-  uint8_t crc = crc8(_gTempCmd, 8);
-  crc = crc8(_val, 16, crc);
-  crc = reverseByte(crc);
+  if (checkSum) {
+    uint8_t _crc = getCRC();
+    uint8_t crc = crc8(_gTempCmd, 8);
+    crc = crc8(_val, 16, crc);
+    crc = reverseByte(crc);
+    if (_crc != crc) {
+      Serial.println("SHT1x temperature checksum error");
+    }
+  } else {
+    skipCrcSHT();
+  }
 
   // Convert raw value to degrees Celsius
   _temperature = (_val * D2) + D1;
@@ -54,7 +61,7 @@ float SHT1x::readTemperature(const TempUnit unit, bool checkSum)
 /**
  * Reads current temperature-corrected relative humidity
  */
-float SHT1x::readHumidity(bool checkSum=false)
+float SHT1x::readHumidity(bool checkSum)
 {
   int _val;                    // Raw humidity value returned from sensor
   float _linearHumidity;       // Humidity with linear correction applied
@@ -75,7 +82,17 @@ float SHT1x::readHumidity(bool checkSum=false)
   sendCommandSHT(_gHumidCmd);
   waitForResultSHT();
   _val = getData16SHT();
-  skipCrcSHT();
+  if (checkSum) {
+    uint8_t _crc = getCRC();
+    uint8_t crc = crc8(_gHumidCmd, 8);
+    crc = crc8(_val, 16, crc);
+    crc = reverseByte(crc);
+    if (_crc != crc) {
+      Serial.println("SHT1x humidity checksum error");
+    }
+  } else {
+    skipCrcSHT();
+  }
 
   // Apply linear conversion to raw value
   _linearHumidity = C1 + C2 * _val + C3 * _val * _val;
