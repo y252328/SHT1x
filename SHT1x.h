@@ -27,19 +27,19 @@ class SHT1x
 {
   public:
     SHT1x(int dataPin, int clockPin):_dataPin(dataPin), _clockPin(clockPin){}
-    float readHumidity(bool checkSum=false);
-    float readTemperature(const TempUnit unit, bool checkSum=false);
+    float readHumidity(const bool checkSum=false);
+    float readTemperature(const TempUnit unit,const  bool checkSum=false);
   private:
     int _dataPin;
     int _clockPin;
-    int shiftIn(int _numBits);
-    void sendCommand(uint8_t _command);
+    int shiftIn(const int _numBits);
+    void sendCommand(const uint8_t _command);
     void waitForResult();
     int getData16();
     void endTrans();
     int getCRC();
-    uint8_t crc8(int data, int size, uint8_t init=0);
-    uint8_t reverseByte(uint8_t data);
+    uint8_t crc8(const int data, const int size, const uint8_t init=0);
+    uint8_t reverseByte(const uint8_t data);
 };
 
 #endif

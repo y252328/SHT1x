@@ -21,7 +21,7 @@
 /**
  * Reads the current temperature
  */
-float SHT1x::readTemperature(const TempUnit unit, bool checkSum)
+float SHT1x::readTemperature(const TempUnit unit, const bool checkSum)
 {
   int _val;                // Raw value returned from sensor
   float _temperature;      // Temperature derived from raw value
@@ -61,7 +61,7 @@ float SHT1x::readTemperature(const TempUnit unit, bool checkSum)
 /**
  * Reads current temperature-corrected relative humidity
  */
-float SHT1x::readHumidity(bool checkSum)
+float SHT1x::readHumidity(const bool checkSum)
 {
   int _val;                    // Raw humidity value returned from sensor
   float _linearHumidity;       // Humidity with linear correction applied
@@ -111,7 +111,7 @@ float SHT1x::readHumidity(bool checkSum)
 
 /**
  */
-int SHT1x::shiftIn(int _numBits)
+int SHT1x::shiftIn(const int _numBits)
 {
   int ret = 0;
   int i;
@@ -129,7 +129,7 @@ int SHT1x::shiftIn(int _numBits)
 
 /**
  */
-void SHT1x::sendCommand(uint8_t  _command)
+void SHT1x::sendCommand(const uint8_t  _command)
 {
   int ack;
 
@@ -236,7 +236,7 @@ int SHT1x::getCRC()
   return val;
 }
 
-uint8_t SHT1x::crc8(int data, int size, uint8_t init)
+uint8_t SHT1x::crc8(const int data, const int size, const uint8_t init)
 {
   uint8_t crc = init;
   for ( int i = size-1 ; i >= 0 ; -- i) {
@@ -252,7 +252,7 @@ uint8_t SHT1x::crc8(int data, int size, uint8_t init)
   return crc;
 }
 
-uint8_t SHT1x::reverseByte(uint8_t data)
+uint8_t SHT1x::reverseByte(const uint8_t data)
 {
   uint8_t r_data = 0;
   for( int i = 0 ; i < 8 ; ++ i ) {
