@@ -1,8 +1,9 @@
 /**
  * SHT1x Library
  *
- * Copyright 2009 Jonathan Oxer <jon@oxer.com.au> / <www.practicalarduino.com>
+ * Copyright 2020 Chih-Yu Hsiang <y252328@gmail.com>
  * Based on previous work by:
+ *    Jonathan Oxer <jon@oxer.com.au> / <www.practicalarduino.com>
  *    Maurice Ribble: <www.glacialwanderer.com/hobbyrobotics/?p=5>
  *    Wayne ?: <ragingreality.blogspot.com/2008/01/ardunio-and-sht15.html>
  *
@@ -108,8 +109,8 @@ float SHT1x::readHumidity(const bool checkSum)
 
 
 /* ================  Private methods ================ */
-
 /**
+ * read data from sensor
  */
 int SHT1x::shiftIn(const int _numBits)
 {
@@ -128,6 +129,7 @@ int SHT1x::shiftIn(const int _numBits)
 }
 
 /**
+ *  start trans. and send command
  */
 void SHT1x::sendCommand(const uint8_t  _command)
 {
@@ -162,6 +164,7 @@ void SHT1x::sendCommand(const uint8_t  _command)
 }
 
 /**
+ *  wait for measurement
  */
 void SHT1x::waitForResult()
 {
@@ -183,6 +186,7 @@ void SHT1x::waitForResult()
 }
 
 /**
+ * get 16 bits data from sensor
  */
 int SHT1x::getData16()
 {
@@ -209,6 +213,7 @@ int SHT1x::getData16()
 }
 
 /**
+ * end transmission
  */
 void SHT1x::endTrans()
 {
@@ -236,6 +241,9 @@ int SHT1x::getCRC()
   return val;
 }
 
+/*
+* calculate CRC-8
+*/
 uint8_t SHT1x::crc8(const int data, const int size, const uint8_t init)
 {
   uint8_t crc = init;
@@ -252,6 +260,9 @@ uint8_t SHT1x::crc8(const int data, const int size, const uint8_t init)
   return crc;
 }
 
+/*
+* reverse a byte
+*/
 uint8_t SHT1x::reverseByte(const uint8_t data)
 {
   uint8_t r_data = 0;

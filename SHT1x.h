@@ -1,8 +1,9 @@
 /**
  * SHT1x Library
  *
- * Copyright 2009 Jonathan Oxer <jon@oxer.com.au> / <www.practicalarduino.com>
+ * Copyright 2020 Chih-Yu Hsiang <y252328@gmail.com>
  * Based on previous work by:
+ *    Jonathan Oxer <jon@oxer.com.au> / <www.practicalarduino.com>
  *    Maurice Ribble: <www.glacialwanderer.com/hobbyrobotics/?p=5>
  *    Wayne ?: <ragingreality.blogspot.com/2008/01/ardunio-and-sht15.html>
  *
