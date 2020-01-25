@@ -37,9 +37,9 @@ float SHT1x::readTemperature(const TempUnit unit, bool checkSum)
 
   // Fetch raw value
   constexpr uint8_t  _gTempCmd  = 0b00000011;
-  sendCommandSHT(_gTempCmd);
-  waitForResultSHT();
-  _val = getData16SHT();
+  sendCommand(_gTempCmd);
+  waitForResult();
+  _val = getData16();
   if (checkSum) {
     uint8_t _crc = getCRC();
     uint8_t crc = crc8(_gTempCmd, 8);
@@ -49,7 +49,7 @@ float SHT1x::readTemperature(const TempUnit unit, bool checkSum)
       Serial.println("SHT1x temperature checksum error");
     }
   } else {
-    skipCrcSHT();
+    endTrans();
   }
 
   // Convert raw value to degrees Celsius
@@ -79,9 +79,9 @@ float SHT1x::readHumidity(bool checkSum)
   constexpr uint8_t _gHumidCmd = 0b00000101;
 
   // Fetch the value from the sensor
-  sendCommandSHT(_gHumidCmd);
-  waitForResultSHT();
-  _val = getData16SHT();
+  sendCommand(_gHumidCmd);
+  waitForResult();
+  _val = getData16();
   if (checkSum) {
     uint8_t _crc = getCRC();
     uint8_t crc = crc8(_gHumidCmd, 8);
@@ -91,7 +91,7 @@ float SHT1x::readHumidity(bool checkSum)
       Serial.println("SHT1x humidity checksum error");
     }
   } else {
-    skipCrcSHT();
+    endTrans();
   }
 
   // Apply linear conversion to raw value
@@ -129,7 +129,7 @@ int SHT1x::shiftIn(int _numBits)
 
 /**
  */
-void SHT1x::sendCommandSHT(uint8_t  _command)
+void SHT1x::sendCommand(uint8_t  _command)
 {
   int ack;
 
@@ -163,7 +163,7 @@ void SHT1x::sendCommandSHT(uint8_t  _command)
 
 /**
  */
-void SHT1x::waitForResultSHT()
+void SHT1x::waitForResult()
 {
   int ack;
   pinMode(_dataPin, INPUT);
@@ -184,7 +184,7 @@ void SHT1x::waitForResultSHT()
 
 /**
  */
-int SHT1x::getData16SHT()
+int SHT1x::getData16()
 {
   int val;
 
@@ -210,7 +210,7 @@ int SHT1x::getData16SHT()
 
 /**
  */
-void SHT1x::skipCrcSHT()
+void SHT1x::endTrans()
 {
   // Skip acknowledge to end trans (no CRC)
   pinMode(_dataPin, OUTPUT);
@@ -223,7 +223,7 @@ void SHT1x::skipCrcSHT()
 
 int SHT1x::getCRC()
 {
-  
+  // Send the required ack
   pinMode(_dataPin, OUTPUT);
   digitalWrite(_dataPin, HIGH);
   digitalWrite(_dataPin, LOW);
@@ -232,14 +232,7 @@ int SHT1x::getCRC()
 
   pinMode(_dataPin, INPUT);
   int val = shiftIn(8);
-
-  // Skip acknowledge to end trans (no CRC)
-  pinMode(_dataPin, OUTPUT);
-  pinMode(_clockPin, OUTPUT);
-
-  digitalWrite(_dataPin, HIGH);
-  digitalWrite(_clockPin, HIGH);
-  digitalWrite(_clockPin, LOW);
+  endTrans();
   return val;
 }
 

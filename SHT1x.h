@@ -33,10 +33,10 @@ class SHT1x
     int _dataPin;
     int _clockPin;
     int shiftIn(int _numBits);
-    void sendCommandSHT(uint8_t _command);
-    void waitForResultSHT();
-    int getData16SHT();
-    void skipCrcSHT();
+    void sendCommand(uint8_t _command);
+    void waitForResult();
+    int getData16();
+    void endTrans();
     int getCRC();
     uint8_t crc8(int data, int size, uint8_t init=0);
     uint8_t reverseByte(uint8_t data);
