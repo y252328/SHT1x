@@ -28,8 +28,8 @@ class SHT1x
 {
   public:
     SHT1x(int dataPin, int clockPin):_dataPin(dataPin), _clockPin(clockPin){}
-    float readHumidity(const bool checkSum=false);
-    float readTemperature(const TempUnit unit,const  bool checkSum=false);
+    float readHumidity(const bool checkSum=true);
+    float readTemperature(const TempUnit unit,const  bool checkSum=true);
   private:
     int _dataPin;
     int _clockPin;
