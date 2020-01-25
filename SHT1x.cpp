@@ -21,14 +21,14 @@
 /**
  * Reads the current temperature
  */
-float SHT1x::readTemperature(const TempUnit unit)
+float SHT1x::readTemperature(const TempUnit unit, bool checkSum)
 {
   int _val;                // Raw value returned from sensor
   float _temperature;      // Temperature derived from raw value
 
   // Conversion coefficients from SHT15 datasheet
   constexpr  float D1 = -40.0;  // for 14 Bit @ 5V
-  float D2; // for 14 Bit DEGC
+  float D2;
   if ( unit == TempUnit::C) {
     D2 = 0.01;
   } else if( unit == TempUnit::F) {
@@ -36,7 +36,14 @@ float SHT1x::readTemperature(const TempUnit unit)
   }
 
   // Fetch raw value
-  _val = readTemperatureRaw();
+  constexpr uint8_t  _gTempCmd  = 0b00000011;
+  sendCommandSHT(_gTempCmd);
+  waitForResultSHT();
+  _val = getData16SHT();
+  uint8_t _crc = getCRC();
+  uint8_t crc = crc8(_gTempCmd, 8);
+  crc = crc8(_val, 16, crc);
+  crc = reverseByte(crc);
 
   // Convert raw value to degrees Celsius
   _temperature = (_val * D2) + D1;
@@ -47,7 +54,7 @@ float SHT1x::readTemperature(const TempUnit unit)
 /**
  * Reads current temperature-corrected relative humidity
  */
-float SHT1x::readHumidity()
+float SHT1x::readHumidity(bool checkSum=false)
 {
   int _val;                    // Raw humidity value returned from sensor
   float _linearHumidity;       // Humidity with linear correction applied
@@ -84,25 +91,6 @@ float SHT1x::readHumidity()
 
 
 /* ================  Private methods ================ */
-
-/**
- * Reads the current raw temperature value
- */
-float SHT1x::readTemperatureRaw()
-{
-  int _val;
-  // Command to send to the SHT1x to request Temperature
-  constexpr uint8_t  _gTempCmd  = 0b00000011;
-
-  sendCommandSHT(_gTempCmd);
-  waitForResultSHT();
-  _val = getData16SHT();
-  uint8_t _crc = getCRC();
-  uint8_t crc = crc8(_gTempCmd, 8);
-  crc = crc8(_val, 16, crc);
-  crc = reverseByte(crc);
-  return (_val);
-}
 
 /**
  */
