@@ -17,13 +17,6 @@
 
 #include "SHT1x.h"
 
-SHT1x::SHT1x(int dataPin, int clockPin)
-{
-  _dataPin = dataPin;
-  _clockPin = clockPin;
-}
-
-
 /* ================  Public methods ================ */
 
 /**
@@ -89,10 +82,10 @@ float SHT1x::readHumidity()
   int _gHumidCmd = 0b00000101;
 
   // Fetch the value from the sensor
-  sendCommandSHT(_gHumidCmd, _dataPin, _clockPin);
-  waitForResultSHT(_dataPin);
-  _val = getData16SHT(_dataPin, _clockPin);
-  skipCrcSHT(_dataPin, _clockPin);
+  sendCommandSHT(_gHumidCmd);
+  waitForResultSHT();
+  _val = getData16SHT();
+  skipCrcSHT();
 
   // Apply linear conversion to raw value
   _linearHumidity = C1 + C2 * _val + C3 * _val * _val;
@@ -118,10 +111,10 @@ float SHT1x::readTemperatureRaw()
   // Command to send to the SHT1x to request Temperature
   int _gTempCmd  = 0b00000011;
 
-  sendCommandSHT(_gTempCmd, _dataPin, _clockPin);
-  waitForResultSHT(_dataPin);
-  _val = getData16SHT(_dataPin, _clockPin);
-  int _crc = getCRC(_dataPin, _clockPin);
+  sendCommandSHT(_gTempCmd);
+  waitForResultSHT();
+  _val = getData16SHT();
+  int _crc = getCRC();
   // skipCrcSHT(_dataPin, _clockPin);
   Serial.print("RAW Temp: ");
   Serial.println(_val);
@@ -140,7 +133,7 @@ float SHT1x::readTemperatureRaw()
 
 /**
  */
-int SHT1x::shiftIn(int _dataPin, int _clockPin, int _numBits)
+int SHT1x::shiftIn(int _numBits)
 {
   int ret = 0;
   int i;
@@ -158,7 +151,7 @@ int SHT1x::shiftIn(int _dataPin, int _clockPin, int _numBits)
 
 /**
  */
-void SHT1x::sendCommandSHT(int _command, int _dataPin, int _clockPin)
+void SHT1x::sendCommandSHT(int _command)
 {
   int ack;
 
@@ -192,7 +185,7 @@ void SHT1x::sendCommandSHT(int _command, int _dataPin, int _clockPin)
 
 /**
  */
-void SHT1x::waitForResultSHT(int _dataPin)
+void SHT1x::waitForResultSHT()
 {
   int i;
   int ack;
@@ -216,14 +209,14 @@ void SHT1x::waitForResultSHT(int _dataPin)
 
 /**
  */
-int SHT1x::getData16SHT(int _dataPin, int _clockPin)
+int SHT1x::getData16SHT()
 {
   int val;
 
   // Get the most significant bits
   pinMode(_dataPin, INPUT);
   pinMode(_clockPin, OUTPUT);
-  val = shiftIn(_dataPin, _clockPin, 8);
+  val = shiftIn(8);
   val *= 256;
 
   // Send the required ack
@@ -235,14 +228,14 @@ int SHT1x::getData16SHT(int _dataPin, int _clockPin)
 
   // Get the least significant bits
   pinMode(_dataPin, INPUT);
-  val |= shiftIn(_dataPin, _clockPin, 8);
+  val |= shiftIn(8);
 
   return val;
 }
 
 /**
  */
-void SHT1x::skipCrcSHT(int _dataPin, int _clockPin)
+void SHT1x::skipCrcSHT()
 {
   // Skip acknowledge to end trans (no CRC)
   pinMode(_dataPin, OUTPUT);
@@ -253,7 +246,7 @@ void SHT1x::skipCrcSHT(int _dataPin, int _clockPin)
   digitalWrite(_clockPin, LOW);
 }
 
-int SHT1x::getCRC(int _dataPin, int _clockPin)
+int SHT1x::getCRC()
 {
   
   pinMode(_dataPin, OUTPUT);
@@ -263,7 +256,7 @@ int SHT1x::getCRC(int _dataPin, int _clockPin)
   digitalWrite(_clockPin, LOW);
 
   pinMode(_dataPin, INPUT);
-  int val = shiftIn(_dataPin, _clockPin, 8);
+  int val = shiftIn(8);
 
   // Skip acknowledge to end trans (no CRC)
   pinMode(_dataPin, OUTPUT);
