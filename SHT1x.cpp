@@ -38,21 +38,21 @@ float SHT1x::readTemperature(const TempUnit unit, const bool checkSum)
 
   // Fetch raw value
   constexpr uint8_t  _gTempCmd  = 0b00000011;
-  sendCommand(_gTempCmd);
+  transStart();
+  writeByte(_gTempCmd);
   waitForResult();
-  _val = getData16();
+  _val = readByte(true);
+  _val = _val << 8;
+  _val |= readByte(checkSum);
   if (checkSum) {
-    uint8_t _crc = getCRC();
-    uint8_t crc = crc8(_gTempCmd, 8);
+    uint8_t _crc = readByte(false);
+    uint8_t crc = crc8(_gTempCmd, 8, crc_init);
     crc = crc8(_val, 16, crc);
     crc = reverseByte(crc);
     if (_crc != crc) {
       Serial.println(F("SHT1x checksum error"));
     }
-  } else {
-    endTrans();
   }
-
   // Convert raw value to degrees Celsius
   _temperature = (_val * D2) + D1;
 
@@ -80,19 +80,20 @@ float SHT1x::readHumidity(const bool checkSum)
   constexpr uint8_t _gHumidCmd = 0b00000101;
 
   // Fetch the value from the sensor
-  sendCommand(_gHumidCmd);
+  transStart();
+  writeByte(_gHumidCmd);
   waitForResult();
-  _val = getData16();
+  _val = readByte(true);
+  _val = _val << 8;
+  _val |= readByte(checkSum);
   if (checkSum) {
-    uint8_t _crc = getCRC();
-    uint8_t crc = crc8(_gHumidCmd, 8);
+    uint8_t _crc = readByte(false);
+    uint8_t crc = crc8(_gHumidCmd, 8, crc_init);
     crc = crc8(_val, 16, crc);
     crc = reverseByte(crc);
     if (_crc != crc) {
       Serial.println(F("SHT1x checksum error"));
     }
-  } else {
-    endTrans();
   }
 
   // Apply linear conversion to raw value
@@ -107,49 +108,6 @@ float SHT1x::readHumidity(const bool checkSum)
   return (_correctedHumidity);
 }
 
-
-/* ================  Private methods ================ */
-/**
- * read data from sensor
- */
-int SHT1x::shiftIn(const int _numBits)
-{
-  int ret = 0;
-  int i;
-
-  for (i=0; i<_numBits; ++i)
-  {
-     digitalWrite(_clockPin, HIGH);
-     delay(10);  // I don't know why I need this, but without it I don't get my 8 lsb of temp
-     ret = ret*2 + digitalRead(_dataPin);
-     digitalWrite(_clockPin, LOW);
-  }
-
-  return(ret);
-}
-
-
-/*
-* start trans. 
-* ----------------------------------------------------------------------------------
-* generates a transmission start 
-*       _____         ________
-* DATA:      |_______|
-*           ___     ___
-* SCK : ___|   |___|   |______
-*/
-void SHT1x::transStart() {
-  pinMode(_dataPin, OUTPUT);
-  pinMode(_clockPin, OUTPUT);
-  digitalWrite(_dataPin, HIGH);
-  digitalWrite(_clockPin, HIGH);
-  digitalWrite(_dataPin, LOW);
-  digitalWrite(_clockPin, LOW);
-  digitalWrite(_clockPin, HIGH);
-  digitalWrite(_dataPin, HIGH);
-  digitalWrite(_clockPin, LOW);
-}
-
 /**
 * communication reset: DATA-line=1 and at least 9 SCK cycles followed by transstart
 *       _____________________________________________________         ________
@@ -159,7 +117,6 @@ void SHT1x::transStart() {
 */
 void SHT1x::connectionReset() {
   pinMode(_dataPin, OUTPUT);
-  pinMode(_clockPin, OUTPUT);
 
   // initial state
   digitalWrite(_dataPin, HIGH);
@@ -172,38 +129,114 @@ void SHT1x::connectionReset() {
   transStart();
 }
 
+/*
+* soft reset sht
+* must read status register after write for updating crc_init
+*/
 void SHT1x::softReset() {
   constexpr uint8_t _gResetCmd = 0b00011110;
   connectionReset();
-  sendCommand(_gResetCmd);
+  transStart();
+  writeByte(_gResetCmd);
+  delay(10);
+  readStatusReg();
 }
 
+/*
+* read status register and update crc_init
+*/
+uint8_t SHT1x::readStatusReg(const bool checkSum=true) {
+  constexpr uint8_t cmd = 0b00000111;
+  transStart();
+  writeByte(cmd);
+  uint8_t _val = readByte(checkSum);
+  if (checkSum) {
+    uint8_t _crc = readByte(false);
+    crc_init = reverseByte(_val) & 0xF0;
+    uint8_t crc = crc8(cmd, 8, crc_init);
+    crc = crc8(_val, 8, crc);
+    crc = reverseByte(crc);
+    if (_crc != crc) {
+      Serial.println(F("SHT1x checksum error"));
+    }
+  }
+  return _val;
+}
+
+
+/*
+* write status register
+* must read status register after write for updating crc_init
+*/
+void SHT1x::writeStatusReg(const uint8_t value) {
+  constexpr uint8_t cmd = 0b00000110;
+  transStart();
+  writeByte(cmd);
+  writeByte(value);
+  readStatusReg(true);
+}
+
+/* ================  Private methods ================ */
 /**
- *  start trans. and send command
+ * read data from sensor
  */
-void SHT1x::sendCommand(const uint8_t  _command)
+int SHT1x::shiftIn(const int _numBits)
+{
+  int ret = 0;
+  int i;
+  pinMode(_dataPin, INPUT);
+  for (i=0; i<_numBits; ++i)
+  {
+     digitalWrite(_clockPin, HIGH);
+     delay(10);  // I don't know why I need this, but without it I don't get my 8 lsb of temp
+     ret = ret*2 + digitalRead(_dataPin);
+     digitalWrite(_clockPin, LOW);
+  }
+
+  return(ret);
+}
+
+/*
+* start trans. 
+* ----------------------------------------------------------------------------------
+* generates a transmission start 
+*       _____         ________
+* DATA:      |_______|
+*           ___     ___
+* SCK : ___|   |___|   |______
+*/
+void SHT1x::transStart() {
+  pinMode(_dataPin, OUTPUT);
+  digitalWrite(_dataPin, HIGH);
+  digitalWrite(_clockPin, HIGH);
+  digitalWrite(_dataPin, LOW);
+  digitalWrite(_clockPin, LOW);
+  digitalWrite(_clockPin, HIGH);
+  digitalWrite(_dataPin, HIGH);
+  digitalWrite(_clockPin, LOW);
+}
+
+
+/**
+ *  write one byte data to sht
+ */
+void SHT1x::writeByte(const uint8_t data)
 {
   int ack;
-  transStart();
 
   pinMode(_dataPin, OUTPUT);
-  pinMode(_clockPin, OUTPUT);
 
   // The command (3 msb are address and must be 000, and last 5 bits are command)
-  shiftOut(_dataPin, _clockPin, MSBFIRST, _command);
+  shiftOut(_dataPin, _clockPin, MSBFIRST, data);
 
   // Verify we get the correct ack
-  digitalWrite(_clockPin, HIGH);
   pinMode(_dataPin, INPUT);
+  digitalWrite(_clockPin, HIGH);
   ack = digitalRead(_dataPin);
   if (ack != LOW) {
     Serial.println(F("SHT1x send command error"));
   }
   digitalWrite(_clockPin, LOW);
-  ack = digitalRead(_dataPin);
-  if (ack != HIGH) {
-    Serial.println(F("SHT1x send command error"));
-  }
 }
 
 /**
@@ -229,65 +262,24 @@ void SHT1x::waitForResult()
 }
 
 /**
- * get 16 bits data from sensor
- */
-int SHT1x::getData16()
+ * read one byte from sht
+*/
+int SHT1x::readByte(const bool ack)
 {
-  int val;
-
-  // Get the most significant bits
-  pinMode(_dataPin, INPUT);
-  pinMode(_clockPin, OUTPUT);
-  val = shiftIn(8);
-  val *= 256;
-
-  // Send the required ack
-  pinMode(_dataPin, OUTPUT);
-  digitalWrite(_dataPin, HIGH);
-  digitalWrite(_dataPin, LOW);
-  digitalWrite(_clockPin, HIGH);
-  digitalWrite(_clockPin, LOW);
-
-  // Get the least significant bits
-  pinMode(_dataPin, INPUT);
-  val |= shiftIn(8);
-
-  return val;
-}
-
-/**
- * end transmission
- */
-void SHT1x::endTrans()
-{
-  // Skip acknowledge to end trans (no CRC)
-  pinMode(_dataPin, OUTPUT);
-  pinMode(_clockPin, OUTPUT);
-
-  digitalWrite(_dataPin, HIGH);
-  digitalWrite(_clockPin, HIGH);
-  digitalWrite(_clockPin, LOW);
-}
-
-int SHT1x::getCRC()
-{
-  // Send the required ack
-  pinMode(_dataPin, OUTPUT);
-  digitalWrite(_dataPin, HIGH);
-  digitalWrite(_dataPin, LOW);
-  digitalWrite(_clockPin, HIGH);
-  digitalWrite(_clockPin, LOW);
-
-  pinMode(_dataPin, INPUT);
   int val = shiftIn(8);
-  endTrans();
+  
+  // Send the required ack
+  pinMode(_dataPin, OUTPUT);
+  digitalWrite(_dataPin, !ack);
+  digitalWrite(_clockPin, HIGH);
+  digitalWrite(_clockPin, LOW);
   return val;
 }
 
 /*
 * calculate CRC-8
 */
-uint8_t SHT1x::crc8(const int data, const int size, const uint8_t init)
+uint8_t SHT1x::crc8(const unsigned int data, const int size, const uint8_t init)
 {
   uint8_t crc = init;
   for ( int i = size-1 ; i >= 0 ; -- i) {

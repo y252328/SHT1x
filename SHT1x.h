@@ -27,22 +27,29 @@ enum class TempUnit : uint8_t{
 class SHT1x
 {
   public:
-    SHT1x(int dataPin, int clockPin):_dataPin(dataPin), _clockPin(clockPin){}
+    SHT1x(int dataPin, int clockPin):_dataPin(dataPin), _clockPin(clockPin){
+      pinMode(_clockPin, OUTPUT);
+    }
+    void init() {
+      connectionReset();
+      readStatusReg(true);
+    }
     float readHumidity(const bool checkSum=true);
-    float readTemperature(const TempUnit unit,const  bool checkSum=true);
+    float readTemperature(const TempUnit unit,const bool checkSum=true);
     void connectionReset();
     void softReset();
+    uint8_t readStatusReg(const bool checkSum=true);
+    void writeStatusReg(const uint8_t value);
   private:
     int _dataPin;
     int _clockPin;
+    uint8_t crc_init;
     int shiftIn(const int _numBits);
     void transStart();
-    void sendCommand(const uint8_t _command);
+    void writeByte(const uint8_t data);
+    int readByte(const bool ack);
     void waitForResult();
-    int getData16();
-    void endTrans();
-    int getCRC();
-    uint8_t crc8(const int data, const int size, const uint8_t init=0);
+    uint8_t crc8(const unsigned int data, const int size, const uint8_t init=0);
     uint8_t reverseByte(const uint8_t data);
 };
 

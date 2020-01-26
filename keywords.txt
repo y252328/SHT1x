@@ -1,7 +1,11 @@
 SHT1x	KEYWORD1
 readHumidity	KEYWORD2
-readTemperatureC	KEYWORD2
-readTemperatureF	KEYWORD2
+readTemperature	KEYWORD2
+init	KEYWORD2
+connectionReset	KEYWORD2
+softReset	KEYWORD2
+readStatusReg	KEYWORD2
+writeStatusReg	KEYWORD2
 TempUnit	KEYWORD1
 C	KEYWORD2
 F	KEYWORD2
