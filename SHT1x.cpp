@@ -128,14 +128,17 @@ int SHT1x::shiftIn(const int _numBits)
   return(ret);
 }
 
-/**
- *  start trans. and send command
- */
-void SHT1x::sendCommand(const uint8_t  _command)
-{
-  int ack;
 
-  // Transmission Start
+/*
+* start trans. 
+* ----------------------------------------------------------------------------------
+* generates a transmission start 
+*       _____         ________
+* DATA:      |_______|
+*           ___     ___
+* SCK : ___|   |___|   |______
+*/
+void SHT1x::transStart() {
   pinMode(_dataPin, OUTPUT);
   pinMode(_clockPin, OUTPUT);
   digitalWrite(_dataPin, HIGH);
@@ -145,6 +148,46 @@ void SHT1x::sendCommand(const uint8_t  _command)
   digitalWrite(_clockPin, HIGH);
   digitalWrite(_dataPin, HIGH);
   digitalWrite(_clockPin, LOW);
+}
+
+/**
+* communication reset: DATA-line=1 and at least 9 SCK cycles followed by transstart
+*       _____________________________________________________         ________
+* DATA:                                                      |_______|
+*          _    _    _    _    _    _    _    _    _        ___     ___
+* SCK : __| |__| |__| |__| |__| |__| |__| |__| |__| |______|   |___|   |______
+*/
+void SHT1x::connectionReset() {
+  pinMode(_dataPin, OUTPUT);
+  pinMode(_clockPin, OUTPUT);
+
+  // initial state
+  digitalWrite(_dataPin, HIGH);
+  digitalWrite(_clockPin, LOW);
+
+  for( uint8_t i = 0 ; i < 9 ; ++ i) {
+    digitalWrite(_clockPin, HIGH);
+    digitalWrite(_clockPin, LOW);
+  }
+  transStart();
+}
+
+void SHT1x::softReset() {
+  constexpr uint8_t _gResetCmd = 0b00011110;
+  connectionReset();
+  sendCommand(_gResetCmd);
+}
+
+/**
+ *  start trans. and send command
+ */
+void SHT1x::sendCommand(const uint8_t  _command)
+{
+  int ack;
+  transStart();
+
+  pinMode(_dataPin, OUTPUT);
+  pinMode(_clockPin, OUTPUT);
 
   // The command (3 msb are address and must be 000, and last 5 bits are command)
   shiftOut(_dataPin, _clockPin, MSBFIRST, _command);

@@ -30,10 +30,13 @@ class SHT1x
     SHT1x(int dataPin, int clockPin):_dataPin(dataPin), _clockPin(clockPin){}
     float readHumidity(const bool checkSum=true);
     float readTemperature(const TempUnit unit,const  bool checkSum=true);
+    void connectionReset();
+    void softReset();
   private:
     int _dataPin;
     int _clockPin;
     int shiftIn(const int _numBits);
+    void transStart();
     void sendCommand(const uint8_t _command);
     void waitForResult();
     int getData16();
